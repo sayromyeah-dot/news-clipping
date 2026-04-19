@@ -43,4 +43,5 @@ jobs:
             git commit -m "📰 $(date -u '+%Y-%m-%d') 뉴스클리핑 자동 생성"
             git push
             echo "✅ 푸시 완료"
+            npm install
           fi
