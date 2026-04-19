@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIA 상품마케팅 뉴스클리핑 · {{DATE_KO}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --navy:  #1E3A5F;
+  --navy2: #2a4f82;
+  --gold:  #B8860B;
+  --gold-bg: rgba(184,134,11,.08);
+  --gold-bd: rgba(184,134,11,.25);
+  --bg:    #F6F4EF;
+  --white: #FFFFFF;
+  --g1:    #EDEAE3;
+  --g2:    #E0DDD6;
+  --g3:    #C8C4BB;
+  --ink:   #111110;
+  --ink2:  #4B4845;
+  --ink3:  #9C9A93;
+  --up:    #166534;
+  --dn:    #991B1B;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',sans-serif;font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.mono{font-family:'DM Mono',monospace}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;background:var(--navy);height:48px;padding:0 20px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;color:#fff;text-decoration:none;letter-spacing:-.01em}
+.nav-logo span{color:#93c5fd}
+.nav-date{font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.45);letter-spacing:.04em}
+
+/* TICKER */
+.ticker{background:var(--navy2);height:34px;display:flex;align-items:center;overflow:hidden;border-bottom:1px solid rgba(255,255,255,.1)}
+.ticker-live{display:flex;align-items:center;gap:5px;padding:0 14px;border-right:1px solid rgba(255,255,255,.15);height:100%;flex-shrink:0}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#93c5fd;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.live-txt{font-family:'DM Mono',monospace;font-size:9px;font-weight:600;color:#93c5fd;letter-spacing:.12em}
+.ticker-scroll{flex:1;overflow:hidden}
+.ticker-track{display:flex;width:max-content;animation:march 38s linear infinite}
+.ticker-track:hover{animation-play-state:paused}
+@keyframes march{to{transform:translateX(-50%)}}
+.ti{display:flex;align-items:center;gap:7px;padding:0 18px;border-right:1px solid rgba(255,255,255,.1);height:34px;flex-shrink:0}
+.ti-k{font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.4)}
+.ti-v{font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:#fff}
+.ti-c{font-family:'DM Mono',monospace;font-size:10px;padding:1px 4px;border-radius:2px}
+.ti-c.up{color:#4ade80;background:rgba(74,222,128,.12)}
+.ti-c.dn{color:#f87171;background:rgba(248,113,113,.12)}
+.ti-c.nt{color:rgba(255,255,255,.35)}
+
+/* HERO */
+.hero{background:var(--white);padding:28px 20px 24px;border-bottom:1px solid var(--g2)}
+.hero-eyebrow{font-family:'DM Mono',monospace;font-size:9px;font-weight:600;color:var(--navy);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
+.hero-date{font-family:'DM Sans',sans-serif;font-size:clamp(36px,9vw,52px);font-weight:700;color:var(--navy);line-height:.95;letter-spacing:-.02em;margin-bottom:12px}
+.hero-date .day{color:var(--g3);font-weight:400;font-size:.6em}
+.hero-summary{font-size:12.5px;color:var(--ink2);line-height:1.75;max-width:520px;padding-top:12px;border-top:1px solid var(--g1)}
+.hero-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+.hero-tag{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);background:var(--g1);border:1px solid var(--g2);padding:3px 8px;border-radius:100px}
+.hero-tag.navy{color:var(--navy);background:rgba(30,58,95,.08);border-color:rgba(30,58,95,.2)}
+.hero-tag.gold{color:var(--gold);background:var(--gold-bg);border-color:var(--gold-bd)}
+
+/* MARKET */
+.market{display:grid;grid-template-columns:repeat(4,1fr);background:var(--white);border-bottom:2px solid var(--navy)}
+.mc{padding:14px 16px;border-right:1px solid var(--g2);position:relative}
+.mc:last-child{border-right:none}
+.mc:first-child::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--navy)}
+.mc-k{font-family:'DM Mono',monospace;font-size:8px;font-weight:600;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.mc-v{font-family:'DM Sans',sans-serif;font-size:20px;font-weight:700;color:var(--navy);line-height:1;margin-bottom:3px;letter-spacing:-.02em}
+.mc-c{font-family:'DM Mono',monospace;font-size:10px}
+.mc-c.up{color:var(--up)}.mc-c.dn{color:var(--dn)}.mc-c.nt{color:var(--ink3)}
+.mc-sub{font-family:'DM Mono',monospace;font-size:8px;color:var(--g3);margin-top:2px}
+
+/* LAYOUT */
+.page{max-width:680px;margin:0 auto;padding:14px 16px 32px}
+.sec{margin-bottom:10px;background:var(--white);border:1px solid var(--g2);border-radius:8px;overflow:hidden}
+
+/* SECTION HEADER */
+.sh{background:var(--navy);padding:10px 18px;display:flex;align-items:center;gap:10px}
+.sh-num{font-family:'DM Mono',monospace;font-size:9px;font-weight:600;color:var(--navy);background:#fff;padding:2px 6px;border-radius:3px;letter-spacing:.04em}
+.sh-num.gold{color:var(--gold)}
+.sh-title{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;color:#fff;letter-spacing:-.01em}
+.sh-rule{flex:1;height:1px;background:rgba(255,255,255,.2)}
+.sh-sub{font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.45);letter-spacing:.04em}
+/* Global Wealth 섹션 헤더 — 골드 */
+.sh.gw{background:var(--gold)}
+.sh.gw .sh-num{color:var(--gold)}
+
+/* NEWS CARD  ← generate.js buildNewsCard() 와 클래스 일치 */
+.news-card{display:grid;grid-template-columns:28px 1fr;gap:12px;padding:14px 18px;border-bottom:1px solid var(--g1);text-decoration:none;color:inherit;transition:background .12s}
+.news-card:last-child{border-bottom:none}
+.news-card:hover{background:var(--g1)}
+.news-card:hover .nc-title{color:var(--navy)}
+.hnw-card:hover{background:var(--gold-bg) !important}
+.hnw-card:hover .nc-title{color:var(--gold) !important}
+.nc-num{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--g3);text-align:right;padding-top:1px}
+.news-card:first-child .nc-num{color:var(--navy)}
+.hnw-card:first-of-type .nc-num{color:var(--gold)}
+.nc-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px}
+.nc-tag{font-family:'DM Mono',monospace;font-size:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:3px;border:1px solid}
+.tag-new{color:#78350F;border-color:rgba(120,53,15,.25);background:rgba(120,53,15,.07)}
+.tag-reg{color:#1E40AF;border-color:rgba(30,64,175,.25);background:rgba(30,64,175,.07)}
+.tag-dollar{color:#065F46;border-color:rgba(6,95,70,.25);background:rgba(6,95,70,.07)}
+.tag-senior{color:#5B21B6;border-color:rgba(91,33,182,.25);background:rgba(91,33,182,.07)}
+.tag-mkt{color:var(--navy);border-color:rgba(30,58,95,.25);background:rgba(30,58,95,.07)}
+.tag-tax{color:#292524;border-color:rgba(41,37,36,.25);background:rgba(41,37,36,.07)}
+.tag-hnw{color:var(--gold);border-color:var(--gold-bd);background:var(--gold-bg)}
+.nc-title{font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.45;margin-bottom:4px;transition:color .12s}
+.nc-desc{font-size:12px;color:var(--ink2);line-height:1.7}
+.nc-mkt-tip{font-size:11px;font-weight:600;color:var(--gold);background:var(--gold-bg);border-left:2px solid var(--gold);padding:4px 8px;margin-top:6px;border-radius:0 3px 3px 0}
+.nc-footer{display:flex;align-items:center;justify-content:space-between;margin-top:5px}
+.nc-src{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3)}
+.nc-src-badge{font-family:'DM Mono',monospace;font-size:8px;padding:1px 4px;border-radius:2px;margin-left:4px;border:1px solid}
+.badge-official{color:#1E40AF;background:rgba(30,64,175,.06);border-color:rgba(30,64,175,.2)}
+.badge-press{color:var(--ink3);background:var(--g1);border-color:var(--g2)}
+.badge-research{color:#065F46;background:rgba(6,95,70,.06);border-color:rgba(6,95,70,.2)}
+.nc-link{font-family:'DM Mono',monospace;font-size:9px;color:var(--navy);opacity:0;transition:opacity .12s}
+.news-card:hover .nc-link{opacity:1}
+
+/* PRODUCT TABLE */
+.tbl-wrap{overflow-x:auto;padding:14px 18px}
+.ptbl{width:100%;border-collapse:collapse;font-size:12px;min-width:480px}
+.ptbl thead{background:var(--g1)}
+.ptbl th{font-family:'DM Mono',monospace;font-size:8px;font-weight:600;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid var(--g2)}
+.ptbl td{padding:10px 12px;border-bottom:1px solid var(--g1);color:var(--ink2);vertical-align:top;line-height:1.5}
+.ptbl tr:last-child td{border-bottom:none}
+.ptbl tr:hover td{background:var(--g1)}
+.ptbl td:first-child{color:var(--navy);font-weight:600;white-space:nowrap}
+.tbdg{font-family:'DM Mono',monospace;font-size:8px;font-weight:500;padding:2px 5px;border-radius:3px;border:1px solid var(--g3);color:var(--ink3);background:var(--g1);display:inline-block;white-space:nowrap}
+.tbdg.dl{color:#065F46;border-color:rgba(6,95,70,.3);background:rgba(6,95,70,.07)}
+.tbdg.sr{color:#5B21B6;border-color:rgba(91,33,182,.3);background:rgba(91,33,182,.07)}
+
+/* CATEGORY GRID */
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;padding:14px 18px;gap:8px}
+.cat{background:var(--g1);border-radius:6px;overflow:hidden}
+.cat-h{display:flex;align-items:center;gap:6px;padding:7px 12px;border-bottom:1px solid var(--g2);background:var(--g1)}
+.cat-ico{font-size:12px}
+.cat-name{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;color:var(--navy)}
+.cat-ul{list-style:none;padding:4px 0}
+.cat-li{padding:4px 12px 4px 20px;font-size:11px;color:var(--ink2);line-height:1.5;position:relative;border-bottom:1px solid rgba(0,0,0,.04)}
+.cat-li:last-child{border-bottom:none}
+.cat-li::before{content:'';position:absolute;left:9px;top:9px;width:3px;height:3px;border-radius:50%;background:var(--g3)}
+
+/* CALENDAR */
+.cal-inner{padding:6px 18px}
+.cal-row{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid var(--g1);align-items:flex-start}
+.cal-row:last-child{border-bottom:none}
+.cal-dt{font-family:'DM Mono',monospace;font-size:10px;font-weight:600;color:var(--navy);white-space:nowrap;min-width:52px;padding-top:1px}
+.cal-t{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--ink)}
+.cal-s{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);margin-top:2px}
+
+/* FOOTER */
+.footer{background:var(--navy);margin-top:20px;padding:20px;text-align:center}
+.footer-logo{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:-.01em;margin-bottom:6px}
+.footer-logo span{color:#93c5fd}
+.footer-txt{font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.3);line-height:1.8;letter-spacing:.02em}
+
+/* RESPONSIVE */
+@media(max-width:500px){
+  .market{grid-template-columns:1fr 1fr}
+  .mc:nth-child(3){border-top:1px solid var(--g2)}
+  .mc:nth-child(4){border-top:1px solid var(--g2);border-right:none}
+  .cat-grid{grid-template-columns:1fr}
+}
+
+/* ENTRANCE */
+.hero,.market,.sec{animation:rise .35s ease both}
+.market{animation-delay:.05s}
+.sec:nth-child(1){animation-delay:.08s}.sec:nth-child(2){animation-delay:.12s}
+.sec:nth-child(3){animation-delay:.16s}.sec:nth-child(4){animation-delay:.20s}
+.sec:nth-child(5){animation-delay:.24s}.sec:nth-child(6){animation-delay:.28s}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="../../index.html" class="nav-logo"><span>AIA</span> 상품마케팅 뉴스클리핑</a>
+  <span class="nav-date mono">{{DATE_ISO}}</span>
+</nav>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-live">
+    <span class="live-dot"></span>
+    <span class="live-txt">LIVE</span>
+  </div>
+  <div class="ticker-scroll">
+    <div class="ticker-track">
+      <div class="ti"><span class="ti-k">USD/KRW</span><span class="ti-v">{{USD_VAL}}</span><span class="ti-c nt">{{USD_SUB}}</span></div>
+      <div class="ti"><span class="ti-k">한국 기준금리</span><span class="ti-v">2.75%</span><span class="ti-c nt">동결</span></div>
+      <div class="ti"><span class="ti-k">KOSPI</span><span class="ti-v">{{KOSPI_VAL}}</span><span class="ti-c {{KOSPI_CLS}}">{{KOSPI_CHG}}</span></div>
+      <div class="ti"><span class="ti-k">미국 기준금리</span><span class="ti-v">4.25–4.50%</span><span class="ti-c nt">동결</span></div>
+      <!-- 복제 (무한 스크롤) -->
+      <div class="ti"><span class="ti-k">USD/KRW</span><span class="ti-v">{{USD_VAL}}</span><span class="ti-c nt">{{USD_SUB}}</span></div>
+      <div class="ti"><span class="ti-k">한국 기준금리</span><span class="ti-v">2.75%</span><span class="ti-c nt">동결</span></div>
+      <div class="ti"><span class="ti-k">KOSPI</span><span class="ti-v">{{KOSPI_VAL}}</span><span class="ti-c {{KOSPI_CLS}}">{{KOSPI_CHG}}</span></div>
+      <div class="ti"><span class="ti-k">미국 기준금리</span><span class="ti-v">4.25–4.50%</span><span class="ti-c nt">동결</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">AIA 상품마케팅 뉴스클리핑 · {{DAY_KO}}</div>
+  <div class="hero-date">{{MONTH_EN}} <strong>{{DAY_NUM}}</strong><span class="day">, {{YEAR}}</span></div>
+  <p class="hero-summary">{{SUMMARY}}</p>
+  <div class="hero-tags">
+    <span class="hero-tag navy">Today {{NEWS_COUNT}} stories</span>
+    <span class="hero-tag gold">Global Wealth</span>
+    <span class="hero-tag">달러보험</span>
+    <span class="hero-tag">세금·상속</span>
+    <span class="hero-tag">시니어</span>
+  </div>
+</div>
+
+<!-- MARKET -->
+<div class="market">
+  <div class="mc">
+    <div class="mc-k">USD / KRW</div>
+    <div class="mc-v">{{USD_VAL}}</div>
+    <div class="mc-c nt">{{USD_SUB}}</div>
+    <div class="mc-sub">한국은행 고시</div>
+  </div>
+  <div class="mc">
+    <div class="mc-k">한국 기준금리</div>
+    <div class="mc-v">2.75%</div>
+    <div class="mc-c nt">동결</div>
+    <div class="mc-sub">2025.02 한국은행</div>
+  </div>
+  <div class="mc">
+    <div class="mc-k">KOSPI</div>
+    <div class="mc-v">{{KOSPI_VAL}}</div>
+    <div class="mc-c {{KOSPI_CLS}}">{{KOSPI_CHG}}</div>
+    <div class="mc-sub">전일 종가</div>
+  </div>
+  <div class="mc">
+    <div class="mc-k">미국 기준금리</div>
+    <div class="mc-v">4.25%</div>
+    <div class="mc-c nt">동결</div>
+    <div class="mc-sub">2025.01 Fed</div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="page">
+
+  <div class="sec">
+    <div class="sh"><span class="sh-num">01</span><span class="sh-title">보험 업계 핵심 뉴스</span><span class="sh-rule"></span><span class="sh-sub">TODAY · {{NEWS_COUNT}}</span></div>
+    {{NEWS_ITEMS}}
+  </div>
+
+  <div class="sec">
+    <div class="sh gw"><span class="sh-num gold">02</span><span class="sh-title">Global Wealth</span><span class="sh-rule"></span><span class="sh-sub">WEALTH MARKET</span></div>
+    {{HNW_ITEMS}}
+  </div>
+
+  <div class="sec">
+    <div class="sh"><span class="sh-num">03</span><span class="sh-title">세금 · 상속 · 증여</span><span class="sh-rule"></span><span class="sh-sub">TAX &amp; ESTATE</span></div>
+    {{TAX_ITEMS}}
+  </div>
+
+  <div class="sec">
+    <div class="sh"><span class="sh-num">04</span><span class="sh-title">신상품 트래커</span><span class="sh-rule"></span><span class="sh-sub">LAST 30 DAYS</span></div>
+    <div class="tbl-wrap">
+      <table class="ptbl">
+        <thead><tr><th>보험사</th><th>상품명</th><th>출시일</th><th>유형</th><th>핵심 특징</th></tr></thead>
+        <tbody>{{PRODUCT_ROWS}}</tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sh"><span class="sh-num">05</span><span class="sh-title">카테고리별 헤드라인</span><span class="sh-rule"></span></div>
+    <div class="cat-grid">{{CAT_BLOCKS}}</div>
+  </div>
+
+  <div class="sec">
+    <div class="sh"><span class="sh-num">06</span><span class="sh-title">이번 주 업계 일정</span><span class="sh-rule"></span></div>
+    <div class="cal-inner">{{CAL_ITEMS}}</div>
+  </div>
+
+</div>
+
+<footer class="footer">
+  <div class="footer-logo"><span>AIA</span> 상품마케팅 뉴스클리핑</div>
+  <div class="footer-txt">{{DATE_KO}} · 매일 07:00 KST 자동 업데이트<br>공개 자료 기반 AI 자동 생성 · 투자·법률·세무 조언 아님</div>
+</footer>
+
+</body>
+</html>

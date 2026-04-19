@@ -1,0 +1,16 @@
+{
+  "name": "AIA 상품마케팅 뉴스클리핑",
+  "short_name": "AIA 뉴스",
+  "description": "AIA생명 상품마케팅팀 일간 뉴스클리핑",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1E3A5F",
+  "background_color": "#1E3A5F",
+  "lang": "ko",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

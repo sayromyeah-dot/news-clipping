@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIA 상품마케팅 뉴스클리핑</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#1E3A5F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AIA 뉴스클리핑">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: #1E3A5F;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh;
+  font-family: -apple-system, 'Noto Sans KR', sans-serif;
+}
+.wrap { text-align: center; color: #fff; padding: 20px; }
+.logo { font-size: 28px; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 6px; }
+.sub  { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 28px; }
+.spinner {
+  width: 36px; height: 36px; margin: 0 auto;
+  border: 3px solid rgba(255,255,255,0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">AIA 뉴스클리핑</div>
+  <div class="sub">오늘의 뉴스로 이동 중...</div>
+  <div class="spinner"></div>
+</div>
+<script>
+// KST(UTC+9) 기준 오늘 날짜 계산
+const now = new Date(Date.now() + 9 * 3600 * 1000);
+const y = now.getUTCFullYear();
+const m = String(now.getUTCMonth() + 1).padStart(2, '0');
+const d = String(now.getUTCDate()).padStart(2, '0');
+const todayFile = './newsletters/' + y + '-' + m + '-' + d + '.html';
+
+// 오늘 파일 있으면 이동, 없으면 latest로
+fetch(todayFile, { method: 'HEAD' })
+  .then(function(r) {
+    window.location.replace(r.ok ? todayFile : './newsletters/latest.html');
+  })
+  .catch(function() {
+    window.location.replace(todayFile);
+  });
+</script>
+</body>
+</html>
