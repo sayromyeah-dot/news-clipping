@@ -32,7 +32,7 @@ async function callClaude(system, user, maxTokens = 3000) {
       'Content-Type':      'application/json',
       'x-api-key':         key,
       'anthropic-version': '2023-06-01',
-      'anthropic-beta':    'web-search-2025-03-05',
+
     },
     body: JSON.stringify({
       model: "claude-3-5-sonnet-20241022",
