@@ -35,7 +35,7 @@ async function callClaude(system, user, maxTokens = 3000) {
       'anthropic-beta':    'web-search-2025-03-05',
     },
     body: JSON.stringify({
-      model: 'claude-3-haiku-20240307',
+      model: "claude-3-5-sonnet-20241022",
       max_tokens: maxTokens,
       system,
       tools:    [{ type: 'web_search_20250305', name: 'web_search', max_uses: 6 }],
