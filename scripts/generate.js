@@ -40,19 +40,25 @@ async function callAI(system, user) {
     const key = (process.env.GEMINI_API_KEY || '').trim();
     if (!key) throw new Error('GEMINI_API_KEY가 없습니다.');
 
-    // API 버전을 v1으로, 모델명을 gemini-1.5-flash로 고정
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`;
+    // v1beta 모델 경로 재설정
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
 
     const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: `${system}\n\n${user}` }] }]
+            contents: [{
+                parts: [{ text: `${system}\n\n사용자 요청: ${user}` }]
+            }]
         })
     });
 
     const data = await res.json();
     if (!res.ok) throw new Error(`API 에러: ${res.status} - ${JSON.stringify(data.error)}`);
+    
+    if (!data.candidates || !data.candidates[0].content) {
+        throw new Error('AI 응답이 올바르지 않습니다.');
+    }
     
     return data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
 }
@@ -79,7 +85,7 @@ function buildCard(item, index, extraClass = '') {
 
 async function genInsuranceNews() {
     const ctx = await getRealtimeNews('보험 신상품 상속세');
-    const res = await callAI("보험 에디터", `JSON 배열(5건) 출력: [{"tag":"신상품","tagClass":"tag-new","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"press","url":"링크"}]`);
+    const res = await callAI("보험 전문 에디터", `다음 정보를 JSON 배열로 5건 생성: [{"tag":"신상품","tagClass":"tag-new","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"press","url":"링크"}]`);
     try {
         const arr = JSON.parse(res);
         return { html: arr.map((item, i) => buildCard(item, i)).join(''), count: arr.length };
@@ -87,20 +93,20 @@ async function genInsuranceNews() {
 }
 
 async function genHNW() {
-    const ctx = await getRealtimeNews('자산가 투자');
-    const res = await callAI("리서처", `JSON 배열(4건) 출력: [{"tag":"자산트렌드","tagClass":"tag-hnw","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"press","url":"링크"}]`);
+    const ctx = await getRealtimeNews('자산가 투자 트렌드');
+    const res = await callAI("리서처", `JSON 배열로 4건 생성: [{"tag":"자산트렌드","tagClass":"tag-hnw","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"press","url":"링크"}]`);
     try { return JSON.parse(res).map((item, i) => buildCard(item, i, ' hnw-card')).join(''); } catch (e) { return ''; }
 }
 
 async function genTax() {
-    const ctx = await getRealtimeNews('상속세 절세');
-    const res = await callAI("세무사", `JSON 배열(4건) 출력: [{"tag":"세무","tagClass":"tag-tax","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"official","url":"링크"}]`);
+    const ctx = await getRealtimeNews('상속세 절세 방법');
+    const res = await callAI("세무 전문가", `JSON 배열로 4건 생성: [{"tag":"세무","tagClass":"tag-tax","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"official","url":"링크"}]`);
     try { return JSON.parse(res).map((item, i) => buildCard(item, i)).join(''); } catch (e) { return ''; }
 }
 
 async function genProducts() {
-    const ctx = await getRealtimeNews('보험 신상품');
-    return await callAI("에디터", `5줄의 <tr><td>회사</td><td>상품명</td><td>날짜</td><td>유형</td><td>특징</td></tr> HTML만.\n뉴스:\n${ctx}`);
+    const ctx = await getRealtimeNews('보험 신상품 출시');
+    return await callAI("에디터", `5줄의 <tr><td>회사</td><td>상품명</td><td>날짜</td><td>유형</td><td>특징</td></tr> HTML 행만 생성.`);
 }
 
 async function genCategories() {
@@ -108,7 +114,7 @@ async function genCategories() {
 }
 
 async function genCalendar() {
-    const res = await callAI("매니저", '경제 일정 JSON 배열(4건): [{"date":"MM/DD","title":"일정"}]');
+    const res = await callAI("매니저", '경제 일정 JSON 배열 4건: [{"date":"MM/DD","title":"일정"}]');
     try { return JSON.parse(res).map(it => `<div class="cal-row"><div class="cal-dt">${it.date}</div><div class="cal-t">${it.title}</div></div>`).join(''); } catch (e) { return ''; }
 }
 
@@ -118,9 +124,11 @@ async function main() {
     const tplPath = path.join(__dirname, '..', 'template.html');
     if (!fs.existsSync(tplPath)) throw new Error('template.html 없음');
     let html = fs.readFileSync(tplPath, 'utf-8');
+    
     const [news, hnw, tax, products, cats, cal] = await Promise.all([
         genInsuranceNews(), genHNW(), genTax(), genProducts(), genCategories(), genCalendar()
     ]);
+
     html = html
         .replace(/\{\{DATE_KO\}\}/g, ko).replace(/\{\{DATE_ISO\}\}/g, date)
         .replace(/\{\{DAY_KO\}\}/g, dayKoStr()).replace(/\{\{DAY_SHORT\}\}/g, dayShort())
@@ -135,6 +143,7 @@ async function main() {
         .replace(/\{\{PRODUCT_ROWS\}\}/g, products)
         .replace(/\{\{CAT_BLOCKS\}\}/g, cats)
         .replace(/\{\{CAL_ITEMS\}\}/g, cal);
+
     const outDir = path.join(__dirname, '..', 'newsletters');
     if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
     fs.writeFileSync(path.join(outDir, `${date}.html`), html);
