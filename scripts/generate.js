@@ -43,9 +43,13 @@ async function getRealtimeNews(query) {
 
 // 3. AI 호출 (Gemini 전용)
 async function callAI(system, user) {
+   async function callAI(system, user) {
+    // 키가 있는지 확인하고 공백을 제거합니다.
     const key = (process.env.GEMINI_API_KEY || '').trim();
-    if (!key) throw new Error('GEMINI_API_KEY가 없습니다.');
-
+    
+    if (!key) {
+        throw new Error('GEMINI_API_KEY를 찾을 수 없습니다. GitHub 저장소의 Settings > Secrets > Actions에 키가 등록되어 있는지, 그리고 workflow 파일(.yml)의 env 섹션에 GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}가 포함되어 있는지 확인해주세요.');
+    }
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
 
     const res = await fetch(url, {
