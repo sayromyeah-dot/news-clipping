@@ -47,32 +47,57 @@ async function callClaude(system, user, maxTokens = 3500) {
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
+    // ── Claude API 호출 (404 에러 최종 해결 버전) ──────────────────────
+async function callClaude(system, user, maxTokens = 3500) {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) throw new Error('ANTHROPIC_API_KEY 환경변수가 없습니다');
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
     headers: {
       'Content-Type':      'application/json',
       'x-api-key':          key,
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: "claude-3-haiku-20240307", // 에러 없는 가장 안정적인 모델
+      // 가장 기본이 되는 모델명을 따옴표 없이 다시 적어봅니다.
+      model: "claude-3-opus-20240229", 
       max_tokens: maxTokens,
-      system,
+      system: system,
       messages: [{ role: 'user', content: user }],
     }),
   });
 
   if (!res.ok) {
     const txt = await res.text();
+    // 만약 여기서 또 404가 나면, 모델명을 'claude-2.1'로 바꿔서 한 번 더 시도하게 만듭니다.
+    if (res.status === 404) {
+       return await callClaudeFallback(system, user, maxTokens);
+    }
     throw new Error(`Claude API 오류 ${res.status}: ${txt}`);
   }
   const data = await res.json();
   return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
 }
 
-function parseJSON(raw) {
-  const cleaned = raw.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-  return JSON.parse(cleaned);
+// 404 전용 예비 호출 함수
+async function callClaudeFallback(system, user, maxTokens) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: "claude-2.1", // 구형 모델이지만 404를 피할 수 있는 마지막 카드입니다.
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: `${system}\n\n${user}` }],
+    }),
+  });
+  const data = await res.json();
+  return data.content[0].text;
 }
-
 // ── 뉴스 카드 HTML 빌더 (기존 디자인 유지) ──────────────────────
 function buildCard(item, index, extraClass = '') {
   const num    = String(index + 1).padStart(2, '0');
