@@ -1,9 +1,3 @@
-#!/usr/bin/env node
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-
 // 1. 날짜 유틸리티
 const KST = () => new Date(Date.now() + 9 * 3600 * 1000);
 const pad2 = (n) => String(n).padStart(2, '0');
@@ -113,4 +107,51 @@ async function genCategories() {
 }
 
 async function genCalendar() {
-    const res = await callAI("매니저", '이번 주 경제 일정 JSON 배열(4건): [{"date":"MM/DD","title":"
+    const res = await callAI("매니저", '이번 주 경제 일정 JSON 배열(4건): [{"date":"MM/DD","title":"일정"}]');
+    try { return JSON.parse(res).map(it => `<div class="cal-row"><div class="cal-dt">${it.date}</div><div class="cal-t">${it.title}</div></div>`).join(''); } catch (e) { return ''; }
+}
+
+// 6. 메인 실행 함수
+async function main() {
+    const date = todayStr();
+    const ko = todayKo();
+    console.log(`🚀 AIA 뉴스레터 생성 시작: ${ko}`);
+
+    const tplPath = path.join(__dirname, '..', 'template.html');
+    if (!fs.existsSync(tplPath)) throw new Error('template.html 파일이 없습니다.');
+    let html = fs.readFileSync(tplPath, 'utf-8');
+
+    console.log('📡 AI 컨텐츠 생성 중...');
+    const [news, hnw, tax, products, cats, cal] = await Promise.all([
+        genInsuranceNews(), genHNW(), genTax(), genProducts(), genCategories(), genCalendar()
+    ]);
+
+    html = html
+        .replace(/\{\{DATE_KO\}\}/g, ko).replace(/\{\{DATE_ISO\}\}/g, date)
+        .replace(/\{\{DAY_KO\}\}/g, dayKoStr()).replace(/\{\{DAY_SHORT\}\}/g, dayShort())
+        .replace(/\{\{DAY_NUM\}\}/g, dayNum()).replace(/\{\{MONTH_KO\}\}/g, monthKo())
+        .replace(/\{\{MONTH_EN\}\}/g, monthEn()).replace(/\{\{YEAR\}\}/g, yearStr())
+        .replace(/\{\{USD_VAL\}\}/g, "1,471원")
+        .replace(/\{\{SUMMARY\}\}/g, "AIA 상품마케팅팀을 위한 오늘의 핵심 요약입니다.")
+        .replace(/\{\{NEWS_COUNT\}\}/g, String(news.count))
+        .replace(/\{\{NEWS_ITEMS\}\}/g, news.html)
+        .replace(/\{\{HNW_ITEMS\}\}/g, hnw)
+        .replace(/\{\{TAX_ITEMS\}\}/g, tax)
+        .replace(/\{\{PRODUCT_ROWS\}\}/g, products)
+        .replace(/\{\{CAT_BLOCKS\}\}/g, cats)
+        .replace(/\{\{CAL_ITEMS\}\}/g, cal);
+
+    const outDir = path.join(__dirname, '..', 'newsletters');
+    if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+
+    fs.writeFileSync(path.join(outDir, `${date}.html`), html, 'utf-8');
+    fs.writeFileSync(path.join(outDir, 'latest.html'), html, 'utf-8');
+
+    console.log(`🎉 생성 완료: newsletters/${date}.html`);
+}
+
+// 에러 핸들링 및 실행
+main().catch(err => {
+    console.error('❌ 최종 오류:', err);
+    process.exit(1);
+});
