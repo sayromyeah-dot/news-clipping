@@ -2,8 +2,8 @@ name: AIA 뉴스클리핑 자동 생성
 
 on:
   schedule:
-    - cron: '0 22 * * *'   # 매일 07:00 KST (= 전날 22:00 UTC)
-  workflow_dispatch:        # 수동 실행 버튼
+    - cron: '0 22 * * *'    # 매일 07:00 KST (= 전날 22:00 UTC)
+  workflow_dispatch:         # 수동 실행 버튼
 
 jobs:
   generate:
@@ -20,13 +20,18 @@ jobs:
         with:
           node-version: '22'
 
+      - name: 의존성 설치
+        run: |
+          if [ -f package.json ]; then
+            npm install
+          fi
+
       - name: newsletters 폴더 확인
         run: mkdir -p newsletters
 
-      - name: 뉴스레터 생성
+      - name: 뉴스레터 생성 실행
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          PAGES_URL: ${{ secrets.PAGES_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           node scripts/generate.js
           echo "--- 생성된 파일 목록 ---"
@@ -40,8 +45,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "변경사항 없음"
           else
-            git commit -m "📰 $(date -u '+%Y-%m-%d') 뉴스클리핑 자동 생성"
+            git commit -m "📰 $(date +'%Y-%m-%d') 뉴스클리핑 자동 생성"
             git push
             echo "✅ 푸시 완료"
-            npm install
           fi
