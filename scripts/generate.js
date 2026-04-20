@@ -1,7 +1,4 @@
-
-
 JavaScript
-#!/usr/bin/env node
 'use strict';
 
 const fs = require('fs');
@@ -44,7 +41,7 @@ async function callAI(system, user) {
     const key = (process.env.GEMINI_API_KEY || '').trim();
     if (!key) throw new Error('GEMINI_API_KEY가 없습니다.');
 
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${key}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
 
     const res = await fetch(url, {
         method: 'POST',
