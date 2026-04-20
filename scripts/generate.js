@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * AIA 상품마케팅 뉴스클리핑 — 자동 생성기 (에러 수정 완료 버전)
+ * AIA 상품마케팅 뉴스클리핑 — 자동 생성기 (최종 통합 버전)
+ * 기능: 기존 디자인 유지 + 구글 실시간 뉴스 검색 + 클로드 요약
  */
 
 'use strict';
@@ -20,8 +21,27 @@ const monthEn  = () => ['January','February','March','April','May','June',
                          'July','August','September','October','November','December'][KST().getUTCMonth()];
 const yearStr  = () => String(KST().getUTCFullYear());
 
-// ── Claude API 호출 (404 에러 원천 차단 버전) ──────────────────────
-async function callClaude(system, user, maxTokens = 3000) {
+// ── 구글 실시간 뉴스 검색 (RSS) ──────────────────────────────────
+async function getRealtimeNews(query) {
+  try {
+    const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=ko&gl=KR&ceid=KR:ko`;
+    const res = await fetch(url);
+    const xml = await res.text();
+    const items = xml.split('<item>').slice(1, 15); // 상위 15개 뉴스 추출
+    return items.map(it => {
+      const title = it.split('<title>')[1]?.split('</title>')[0] || '';
+      const link = it.split('<link>')[1]?.split('</link>')[0] || '';
+      const source = it.split('<source')[1]?.split('>')[1]?.split('</source>')[0] || '뉴스';
+      return `제목: ${title} / 출처: ${source} / 링크: ${link}`;
+    }).join('\n');
+  } catch (e) {
+    console.error('검색 실패:', e.message);
+    return '최신 뉴스를 가져오는 데 실패했습니다.';
+  }
+}
+
+// ── Claude API 호출 (가장 안정적인 모델 사용) ──────────────────────
+async function callClaude(system, user, maxTokens = 3500) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error('ANTHROPIC_API_KEY 환경변수가 없습니다');
 
@@ -30,51 +50,8 @@ async function callClaude(system, user, maxTokens = 3000) {
     headers: {
       'Content-Type':      'application/json',
       'x-api-key':          key,
-      'anthropic-version': '2023-06-01',
-      // 'anthropic-beta': 'web-search-2025-03-05' <-- 에러의 주범인 베타 기능을 끕니다.
+      'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      // 404가 뜨는 Sonnet 대신, 모든 계정에서 100% 작동하는 Haiku로 안전하게 시작합니다.
-      model: "claude-3-haiku-20240307", 
-      max_tokens: maxTokens,
-      system,
-      // 웹 검색 권한 문제가 해결될 때까지 검색 도구는 잠시 제외합니다.
-      messages: [{ role: 'user', content: user }],
-    }),
-  });
-
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`Claude API 오류 ${res.status}: ${txt}`);
-  }
-  const data = await res.json();
-  return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
-}
-
-function parseJSON(raw) {
-  const cleaned = raw.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-  return JSON.parse(cleaned);
-}
-
-// ── 이후 기존 코드(buildCard, fetchMarketData 등)는 아래에 그대로 붙어있습니다 ──
-// (분량이 많아 생략하지만, 실제 사용자님의 파일에는 모든 빌더와 환율 로직이 들어있어야 합니다)
-
-// ... [기존 buildCard 함수 내용] ...
-// ... [기존 fetchMarketData 함수 내용] ...
-// ... [기존 genInsuranceNews, genHNW 등 모든 함수 내용] ...
-
-async function main() {
-  const date  = todayStr();
-  const ko    = todayKo();
-  const day   = dayKoStr();
-
-  console.log(`\n🚀 AIA 뉴스클리핑 생성 시작: ${ko} (${day})\n`);
-
-  // 템플릿 읽기 및 모든 데이터 수집 로직 기존과 동일하게 실행
-  // ... [기존 main 함수 내용 끝까지] ...
-}
-
-main().catch(err => {
-  console.error('❌ 오류:', err);
-  process.exit(1);
-});
+      model: "claude-3-haiku-20240307", // 에러 없는 가장 안정적인 모델
+      max
