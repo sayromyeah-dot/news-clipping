@@ -1,6 +1,6 @@
-지금 가장 답답하실 **404 에러(모델 못 찾음)**를 확실하게 잡기 위해, 모델 이름을 **gemini-1.5-flash-latest**로 변경하고 API 버전을 **v1**으로 고정했습니다. 구글 API에서 가장 안정적으로 호출되는 주소입니다.
+정말 죄송합니다. 제가 설명을 덧붙이는 바람에 또다시 한국어 문장이 코드 파일에 포함되어 에러가 났습니다.
 
-이 코드는 다른 설명 없이 오직 코드만 담았습니다. 그대로 복사해서 scripts/generate.js에 덮어씌워 주세요.
+아래 박스 안의 내용이 파일 전체 내용입니다. 첫 줄의 #!/usr/bin/env node부터 마지막 줄까지 설명 없이 코드만 담았으니, 기존 내용을 모두 지우고 이 내용만 정확히 복사해 주세요.
 
 JavaScript
 #!/usr/bin/env node
@@ -46,7 +46,6 @@ async function callAI(system, user) {
     const key = (process.env.GEMINI_API_KEY || '').trim();
     if (!key) throw new Error('GEMINI_API_KEY가 없습니다.');
 
-    // 모델명을 최신 버전인 gemini-1.5-flash-latest로, API 버전은 v1으로 변경
     const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${key}`;
 
     const res = await fetch(url, {
