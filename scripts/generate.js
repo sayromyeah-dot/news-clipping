@@ -40,19 +40,29 @@ async function callAI(system, user) {
     const key = (process.env.GEMINI_API_KEY || '').trim();
     if (!key) throw new Error('GEMINI_API_KEY가 없습니다.');
 
-    // 404 해결을 위한 정확한 정규 경로: v1beta/models/gemini-1.5-flash
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+    // 최신 표준 v1 경로와 모델명 명시
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${key}`;
 
     const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            contents: [{ parts: [{ text: `시스템: ${system}\n\n사용자: ${user}` }] }]
+            contents: [{
+                role: "user",
+                parts: [{ text: `System context: ${system}\n\nUser request: ${user}` }]
+            }]
         })
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(`API 에러: ${res.status} - ${data.error ? data.error.message : JSON.stringify(data)}`);
+    if (!res.ok) {
+        const msg = data.error ? data.error.message : JSON.stringify(data);
+        throw new Error(`API 에러: ${res.status} - ${msg}`);
+    }
+    
+    if (!data.candidates || !data.candidates[0].content) {
+        throw new Error('AI 응답이 비어있습니다.');
+    }
     
     return data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
 }
@@ -79,7 +89,7 @@ function buildCard(item, index, extraClass = '') {
 
 async function genInsuranceNews() {
     const ctx = await getRealtimeNews('보험 신상품 상속세');
-    const res = await callAI("에디터", `JSON 배열(5건) 출력: [{"tag":"신상품","tagClass":"tag-new","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"press","url":"링크"}]\n뉴스:\n${ctx}`);
+    const res = await callAI("Insurance News Editor", `Output JSON array(5 items): [{"tag":"신상품","tagClass":"tag-new","title":"string","desc":"string","marketingTip":"string","source":"string","sourceType":"press","url":"string"}]\nContext:\n${ctx}`);
     try {
         const arr = JSON.parse(res);
         return { html: arr.map((item, i) => buildCard(item, i)).join(''), count: arr.length };
@@ -87,28 +97,28 @@ async function genInsuranceNews() {
 }
 
 async function genHNW() {
-    const ctx = await getRealtimeNews('자산가 투자');
-    const res = await callAI("리서처", `JSON 배열(4건) 출력: [{"tag":"자산트렌드","tagClass":"tag-hnw","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"press","url":"링크"}]\n뉴스:\n${ctx}`);
+    const ctx = await getRealtimeNews('Wealth Management Trends');
+    const res = await callAI("HNW Researcher", `Output JSON array(4 items): [{"tag":"자산트렌드","tagClass":"tag-hnw","title":"string","desc":"string","marketingTip":"string","source":"string","sourceType":"press","url":"string"}]\nContext:\n${ctx}`);
     try { return JSON.parse(res).map((item, i) => buildCard(item, i, ' hnw-card')).join(''); } catch (e) { return ''; }
 }
 
 async function genTax() {
-    const ctx = await getRealtimeNews('상속세 절세');
-    const res = await callAI("세무사", `JSON 배열(4건) 출력: [{"tag":"세무","tagClass":"tag-tax","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"official","url":"링크"}]\n뉴스:\n${ctx}`);
+    const ctx = await getRealtimeNews('Tax savings inheritance');
+    const res = await callAI("Tax Expert", `Output JSON array(4 items): [{"tag":"세무","tagClass":"tag-tax","title":"string","desc":"string","marketingTip":"string","source":"string","sourceType":"official","url":"string"}]\nContext:\n${ctx}`);
     try { return JSON.parse(res).map((item, i) => buildCard(item, i)).join(''); } catch (e) { return ''; }
 }
 
 async function genProducts() {
-    const ctx = await getRealtimeNews('보험 신상품 출시');
-    return await callAI("에디터", `다음 뉴스에서 5개의 <tr><td>회사</td><td>상품명</td><td>날짜</td><td>유형</td><td>특징</td></tr> HTML 행만 생성:\n${ctx}`);
+    const ctx = await getRealtimeNews('New Insurance Products');
+    return await callAI("Product Analyst", `Generate 5 rows of <tr><td>Company</td><td>Product</td><td>Date</td><td>Type</td><td>Feature</td></tr> HTML only based on:\n${ctx}`);
 }
 
 async function genCategories() {
-    return await callAI("에디터", "🧬헬스, 💰금융, 📊인구, 🤖AI, 🌐해외 5개 분야 키워드를 <div class=\"cat\">분야: 키워드</div> 형태로 5개 생성.");
+    return await callAI("Editor", "Generate 5 categories in <div class=\"cat\">Icon Name: Trend</div> HTML format (Health, Finance, Population, AI, Global).");
 }
 
 async function genCalendar() {
-    const res = await callAI("매니저", '경제 일정 JSON 배열(4건): [{"date":"MM/DD","title":"일정"}]');
+    const res = await callAI("Finance Manager", 'Economic calendar JSON array(4 items): [{"date":"MM/DD","title":"string"}]');
     try { return JSON.parse(res).map(it => `<div class="cal-row"><div class="cal-dt">${it.date}</div><div class="cal-t">${it.title}</div></div>`).join(''); } catch (e) { return ''; }
 }
 
@@ -116,7 +126,7 @@ async function main() {
     const date = todayStr(); const ko = todayKo();
     console.log(`🚀 AIA 뉴스레터 생성 시작: ${ko}`);
     const tplPath = path.join(__dirname, '..', 'template.html');
-    if (!fs.existsSync(tplPath)) throw new Error('template.html 파일 없음');
+    if (!fs.existsSync(tplPath)) throw new Error('template.html not found');
     let html = fs.readFileSync(tplPath, 'utf-8');
     
     const [news, hnw, tax, products, cats, cal] = await Promise.all([
@@ -129,7 +139,7 @@ async function main() {
         .replace(/\{\{DAY_NUM\}\}/g, dayNum()).replace(/\{\{MONTH_KO\}\}/g, monthKo())
         .replace(/\{\{MONTH_EN\}\}/g, monthEn()).replace(/\{\{YEAR\}\}/g, yearStr())
         .replace(/\{\{USD_VAL\}\}/g, "1,471원")
-        .replace(/\{\{SUMMARY\}\}/g, "오늘의 주요 금융 소식입니다.")
+        .replace(/\{\{SUMMARY\}\}/g, "시장 주요 뉴스를 전해드립니다.")
         .replace(/\{\{NEWS_COUNT\}\}/g, String(news.count))
         .replace(/\{\{NEWS_ITEMS\}\}/g, news.html)
         .replace(/\{\{HNW_ITEMS\}\}/g, hnw)
