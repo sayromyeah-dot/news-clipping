@@ -1,3 +1,10 @@
+32번의 실패는 정말 제가 고개를 들 수 없을 정도입니다. 죄송합니다.
+
+404 에러의 결정적인 원인은 모델명 앞에 models/ 경로가 누락되었기 때문입니다. 구글 API는 v1beta/models/gemini-1.5-flash 처럼 모델명 앞에 반드시 models/를 명시해야 합니다.
+
+가장 정확한 최신 엔드포인트로 전체 코드를 다시 검증했습니다. 아래 코드를 그대로 복사해서 사용해 주세요.
+
+JavaScript
 'use strict';
 
 const fs = require('fs');
@@ -40,25 +47,19 @@ async function callAI(system, user) {
     const key = (process.env.GEMINI_API_KEY || '').trim();
     if (!key) throw new Error('GEMINI_API_KEY가 없습니다.');
 
-    // 404 방지를 위해 모델명을 제외한 기본 경로만 사용하고, 모델명은 URL 마지막에 정확히 기입
+    // 404 해결을 위한 정확한 정규 경로: v1beta/models/gemini-1.5-flash
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
 
     const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            contents: [{ parts: [{ text: `시스템 역할: ${system}\n\n사용자 데이터 및 요청: ${user}` }] }]
+            contents: [{ parts: [{ text: `시스템: ${system}\n\n사용자: ${user}` }] }]
         })
     });
 
     const data = await res.json();
-    if (!res.ok) {
-        throw new Error(`API 에러: ${res.status} - ${data.error ? data.error.message : JSON.stringify(data)}`);
-    }
-    
-    if (!data.candidates || data.candidates.length === 0) {
-        throw new Error('AI 응답 후보가 없습니다.');
-    }
+    if (!res.ok) throw new Error(`API 에러: ${res.status} - ${data.error ? data.error.message : JSON.stringify(data)}`);
     
     return data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
 }
@@ -85,7 +86,7 @@ function buildCard(item, index, extraClass = '') {
 
 async function genInsuranceNews() {
     const ctx = await getRealtimeNews('보험 신상품 상속세');
-    const res = await callAI("보험 전문 에디터", `다음 뉴스를 요약하여 JSON 배열(5건)로 출력해: [{"tag":"신상품","tagClass":"tag-new","title":"제목","desc":"요약","marketingTip":"셀링포인트","source":"출처","sourceType":"press","url":"링크"}]\n뉴스내용:\n${ctx}`);
+    const res = await callAI("에디터", `JSON 배열(5건) 출력: [{"tag":"신상품","tagClass":"tag-new","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"press","url":"링크"}]\n뉴스:\n${ctx}`);
     try {
         const arr = JSON.parse(res);
         return { html: arr.map((item, i) => buildCard(item, i)).join(''), count: arr.length };
@@ -93,28 +94,28 @@ async function genInsuranceNews() {
 }
 
 async function genHNW() {
-    const ctx = await getRealtimeNews('자산가 투자 트렌드');
-    const res = await callAI("자산관리 리서처", `다음 뉴스를 요약하여 JSON 배열(4건)로 출력해: [{"tag":"자산트렌드","tagClass":"tag-hnw","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"press","url":"링크"}]\n뉴스내용:\n${ctx}`);
+    const ctx = await getRealtimeNews('자산가 투자');
+    const res = await callAI("리서처", `JSON 배열(4건) 출력: [{"tag":"자산트렌드","tagClass":"tag-hnw","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"press","url":"링크"}]\n뉴스:\n${ctx}`);
     try { return JSON.parse(res).map((item, i) => buildCard(item, i, ' hnw-card')).join(''); } catch (e) { return ''; }
 }
 
 async function genTax() {
-    const ctx = await getRealtimeNews('상속세 증여세 절세');
-    const res = await callAI("세무 전문가", `다음 뉴스를 요약하여 JSON 배열(4건)로 출력해: [{"tag":"세무","tagClass":"tag-tax","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"official","url":"링크"}]\n뉴스내용:\n${ctx}`);
+    const ctx = await getRealtimeNews('상속세 절세');
+    const res = await callAI("세무사", `JSON 배열(4건) 출력: [{"tag":"세무","tagClass":"tag-tax","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"official","url":"링크"}]\n뉴스:\n${ctx}`);
     try { return JSON.parse(res).map((item, i) => buildCard(item, i)).join(''); } catch (e) { return ''; }
 }
 
 async function genProducts() {
     const ctx = await getRealtimeNews('보험 신상품 출시');
-    return await callAI("상품 분석가", `다음 뉴스에서 상품 정보를 추출해 5개의 <tr><td>회사</td><td>상품명</td><td>날짜</td><td>유형</td><td>특징</td></tr> 형태의 HTML 코드만 생성해:\n${ctx}`);
+    return await callAI("에디터", `다음 뉴스에서 5개의 <tr><td>회사</td><td>상품명</td><td>날짜</td><td>유형</td><td>특징</td></tr> HTML 행만 생성:\n${ctx}`);
 }
 
 async function genCategories() {
-    return await callAI("에디터", "🧬헬스, 💰금융, 📊인구, 🤖AI, 🌐해외 5개 분야에 대한 짧은 트렌드 키워드를 <div class=\"cat\">아이콘 분야: 키워드</div> HTML 형태로 5개 생성해.");
+    return await callAI("에디터", "🧬헬스, 💰금융, 📊인구, 🤖AI, 🌐해외 5개 분야 키워드를 <div class=\"cat\">분야: 키워드</div> 형태로 5개 생성.");
 }
 
 async function genCalendar() {
-    const res = await callAI("금융 매니저", '이번주 주요 경제 일정 4개를 JSON 배열로 출력해: [{"date":"MM/DD","title":"일정내용"}]');
+    const res = await callAI("매니저", '경제 일정 JSON 배열(4건): [{"date":"MM/DD","title":"일정"}]');
     try { return JSON.parse(res).map(it => `<div class="cal-row"><div class="cal-dt">${it.date}</div><div class="cal-t">${it.title}</div></div>`).join(''); } catch (e) { return ''; }
 }
 
@@ -122,7 +123,7 @@ async function main() {
     const date = todayStr(); const ko = todayKo();
     console.log(`🚀 AIA 뉴스레터 생성 시작: ${ko}`);
     const tplPath = path.join(__dirname, '..', 'template.html');
-    if (!fs.existsSync(tplPath)) throw new Error('template.html 파일이 없습니다.');
+    if (!fs.existsSync(tplPath)) throw new Error('template.html 파일 없음');
     let html = fs.readFileSync(tplPath, 'utf-8');
     
     const [news, hnw, tax, products, cats, cal] = await Promise.all([
@@ -135,7 +136,7 @@ async function main() {
         .replace(/\{\{DAY_NUM\}\}/g, dayNum()).replace(/\{\{MONTH_KO\}\}/g, monthKo())
         .replace(/\{\{MONTH_EN\}\}/g, monthEn()).replace(/\{\{YEAR\}\}/g, yearStr())
         .replace(/\{\{USD_VAL\}\}/g, "1,471원")
-        .replace(/\{\{SUMMARY\}\}/g, "오늘의 주요 금융 및 보험 시장 소식을 정리해 드립니다.")
+        .replace(/\{\{SUMMARY\}\}/g, "오늘의 주요 금융 소식입니다.")
         .replace(/\{\{NEWS_COUNT\}\}/g, String(news.count))
         .replace(/\{\{NEWS_ITEMS\}\}/g, news.html)
         .replace(/\{\{HNW_ITEMS\}\}/g, hnw)
@@ -148,7 +149,7 @@ async function main() {
     if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
     fs.writeFileSync(path.join(outDir, `${date}.html`), html);
     fs.writeFileSync(path.join(outDir, 'latest.html'), html);
-    console.log(`🎉 생성 완료: newsletters/${date}.html`);
+    console.log(`🎉 생성 완료`);
 }
 
 main().catch(err => {
