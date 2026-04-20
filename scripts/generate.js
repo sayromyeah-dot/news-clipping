@@ -1,4 +1,11 @@
-// 1. 날짜 유틸리티
+#!/usr/bin/env node
+'use strict';
+
+// 필요한 모듈 선언 (이 부분이 빠져서 에러가 났었습니다)
+const fs = require('fs');
+const path = require('path');
+
+// 1. 날짜 및 시간 유틸리티 (KST 기준)
 const KST = () => new Date(Date.now() + 9 * 3600 * 1000);
 const pad2 = (n) => String(n).padStart(2, '0');
 
@@ -17,12 +24,12 @@ const monthKo = () => `${KST().getUTCMonth() + 1}월`;
 const monthEn = () => ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][KST().getUTCMonth()];
 const yearStr = () => String(KST().getUTCFullYear());
 
-// 2. 뉴스 수집 함수
+// 2. 구글 뉴스 수집 (RSS)
 async function getRealtimeNews(query) {
     try {
         const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=ko&gl=KR&ceid=KR:ko`;
         const res = await fetch(url);
-        if (!res.ok) return '데이터 없음';
+        if (!res.ok) return '데이터를 가져올 수 없습니다.';
         const xml = await res.text();
         return xml.split('<item>').slice(1, 11).map(it => {
             const title = it.split('<title>')[1]?.split('</title>')[0] || '';
@@ -30,10 +37,12 @@ async function getRealtimeNews(query) {
             const source = it.split('<source')[1]?.split('>')[1]?.split('</source>')[0] || '뉴스';
             return `제목: ${title} / 출처: ${source} / 링크: ${link}`;
         }).join('\n');
-    } catch (e) { return '수집 에러'; }
+    } catch (e) {
+        return '수집 중 오류 발생';
+    }
 }
 
-// 3. AI 호출 함수 (Gemini 전용)
+// 3. AI 호출 (Gemini 전용)
 async function callAI(system, user) {
     const key = (process.env.GEMINI_API_KEY || '').trim();
     if (!key) throw new Error('GEMINI_API_KEY가 없습니다.');
@@ -54,13 +63,15 @@ async function callAI(system, user) {
     return data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
 }
 
-// 4. HTML 카드 빌더
+// 4. 카드 디자인 빌더
 function buildCard(item, index, extraClass = '') {
     const num = String(index + 1).padStart(2, '0');
     const bMap = { official: 'badge-official', press: 'badge-press', research: 'badge-research' };
     const lMap = { official: '공식발표', press: '언론보도', research: '리서치' };
+    const safeUrl = item.url ? encodeURI(item.url) : '#';
+
     return `
-    <a class="news-card${extraClass}" href="${encodeURI(item.url || '#')}" target="_blank">
+    <a class="news-card${extraClass}" href="${safeUrl}" target="_blank">
         <div class="nc-num">${num}</div>
         <div>
             <div class="nc-tags"><span class="nc-tag ${item.tagClass || 'tag-mkt'}">${item.tag || '뉴스'}</span></div>
@@ -75,10 +86,10 @@ function buildCard(item, index, extraClass = '') {
     </a>`;
 }
 
-// 5. 섹션별 생성 함수들
+// 5. 섹션 데이터 생성
 async function genInsuranceNews() {
-    const ctx = await getRealtimeNews('보험 신상품 상속세');
-    const res = await callAI("보험 전문 에디터", `다음 정보를 JSON 배열(5건)로 만드세요: [{"tag":"신상품","tagClass":"tag-new","title":"제목","desc":"요약","marketingTip":"마케팅포인트","source":"출처","sourceType":"press","url":"링크"}]\n\n뉴스자료:\n${ctx}`);
+    const ctx = await getRealtimeNews('보험 신상품 상속세 시니어');
+    const res = await callAI("보험 에디터", `JSON 배열(5건)로 출력: [{"tag":"신상품","tagClass":"tag-new","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"press","url":"링크"}]`);
     try {
         const arr = JSON.parse(res);
         return { html: arr.map((item, i) => buildCard(item, i)).join(''), count: arr.length };
@@ -86,24 +97,24 @@ async function genInsuranceNews() {
 }
 
 async function genHNW() {
-    const ctx = await getRealtimeNews('자산가 투자 PB');
-    const res = await callAI("투자 전략가", `JSON 배열(4건) 출력: [{"tag":"자산트렌드","tagClass":"tag-hnw","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"press","url":"링크"}]\n\n뉴스자료:\n${ctx}`);
+    const ctx = await getRealtimeNews('자산가 투자 PB 트렌드');
+    const res = await callAI("HNW 전문가", `JSON 배열(4건) 출력: [{"tag":"자산트렌드","tagClass":"tag-hnw","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"press","url":"링크"}]`);
     try { return JSON.parse(res).map((item, i) => buildCard(item, i, ' hnw-card')).join(''); } catch (e) { return ''; }
 }
 
 async function genTax() {
     const ctx = await getRealtimeNews('상속세 증여세 절세');
-    const res = await callAI("세무 전문가", `JSON 배열(4건) 출력: [{"tag":"세무","tagClass":"tag-tax","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"official","url":"링크"}]\n\n뉴스자료:\n${ctx}`);
+    const res = await callAI("세무사", `JSON 배열(4건) 출력: [{"tag":"세무","tagClass":"tag-tax","title":"제목","desc":"요약","marketingTip":"팁","source":"출처","sourceType":"official","url":"링크"}]`);
     try { return JSON.parse(res).map((item, i) => buildCard(item, i)).join(''); } catch (e) { return ''; }
 }
 
 async function genProducts() {
-    const ctx = await getRealtimeNews('보험 신상품');
-    return await callAI("리서처", `다음 뉴스를 바탕으로 <tr><td>회사</td><td>상품명</td><td>날짜</td><td>유형</td><td>특징</td></tr> HTML 행들만 생성하세요. 5줄.\n\n뉴스:\n${ctx}`);
+    const ctx = await getRealtimeNews('보험 신상품 출시');
+    return await callAI("리서처", `5줄의 <tr><td>회사</td><td>상품명</td><td>날짜</td><td>유형</td><td>특징</td></tr> HTML만 생성.\n뉴스:\n${ctx}`);
 }
 
 async function genCategories() {
-    return await callAI("에디터", "🧬헬스, 💰금융, 📊인구, 🤖AI, 🌐해외 5개 카테고리를 <div class=\"cat\">내용</div> HTML로 작성하세요.");
+    return await callAI("에디터", "🧬헬스, 💰금융, 📊인구, 🤖AI, 🌐해외 5개 카테고리를 <div class=\"cat\">내용</div> HTML로 작성.");
 }
 
 async function genCalendar() {
@@ -111,7 +122,7 @@ async function genCalendar() {
     try { return JSON.parse(res).map(it => `<div class="cal-row"><div class="cal-dt">${it.date}</div><div class="cal-t">${it.title}</div></div>`).join(''); } catch (e) { return ''; }
 }
 
-// 6. 메인 실행 함수
+// 6. 메인 로직
 async function main() {
     const date = todayStr();
     const ko = todayKo();
@@ -132,7 +143,7 @@ async function main() {
         .replace(/\{\{DAY_NUM\}\}/g, dayNum()).replace(/\{\{MONTH_KO\}\}/g, monthKo())
         .replace(/\{\{MONTH_EN\}\}/g, monthEn()).replace(/\{\{YEAR\}\}/g, yearStr())
         .replace(/\{\{USD_VAL\}\}/g, "1,471원")
-        .replace(/\{\{SUMMARY\}\}/g, "AIA 상품마케팅팀을 위한 오늘의 핵심 요약입니다.")
+        .replace(/\{\{SUMMARY\}\}/g, "오늘의 핵심 뉴스 요약입니다.")
         .replace(/\{\{NEWS_COUNT\}\}/g, String(news.count))
         .replace(/\{\{NEWS_ITEMS\}\}/g, news.html)
         .replace(/\{\{HNW_ITEMS\}\}/g, hnw)
@@ -150,7 +161,7 @@ async function main() {
     console.log(`🎉 생성 완료: newsletters/${date}.html`);
 }
 
-// 에러 핸들링 및 실행
+// 실행부
 main().catch(err => {
     console.error('❌ 최종 오류:', err);
     process.exit(1);
